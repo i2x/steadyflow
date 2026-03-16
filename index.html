@@ -222,8 +222,8 @@ function render() {
     const d     = wkDate(wn);
     const tk    = ticker(wn);
     const s     = STOCKS[tk];
-    const isNow = wn===curWn;
-    const isPast= d<mon;
+    const isNow  = wn === curWn;
+    const isPast = wn < curWn;
 
     const stop = document.createElement('div');
 
