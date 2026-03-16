@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>steadyflow</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
+               'Noto Sans Thai', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #edeae3;
+  color: #1c1914;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── BLOBS ───────────────────────────────────── */
+.blobs {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+.b {
+  position: absolute; border-radius: 50%;
+  filter: blur(72px); opacity: 0.45;
+}
+.b1 { width:360px; height:320px; top:-60px; right:-40px;
+      background: radial-gradient(circle, #d4826a, transparent 70%); }
+.b2 { width:280px; height:320px; top:-30px; right:120px;
+      background: radial-gradient(circle, #a8c4d4, transparent 70%); opacity:.35; }
+.b3 { width:220px; height:200px; bottom:-40px; left:-30px;
+      background: radial-gradient(circle, #8ab8a8, transparent 70%); opacity:.3; }
+
+/* ── HEADER ──────────────────────────────────── */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  padding: 22px 32px;
+  display: flex; justify-content: space-between; align-items: baseline;
+  background: linear-gradient(to bottom, #edeae3 60%, transparent);
+  pointer-events: none;
+}
+.logo { font-size: 13px; font-weight: 600; letter-spacing: -0.2px; color: #1c1914; }
+#navDate { font-size: 12px; color: #9a9080; }
+
+/* ── TRACK ───────────────────────────────────── */
+.track {
+  position: relative; z-index: 1;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 100px 32px 160px;
+}
+
+/* the spine */
+.track::before {
+  content: '';
+  position: absolute;
+  left: calc(32px + 5px);   /* aligns with dot center */
+  top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(28,25,20,0.15) 8%,
+    rgba(28,25,20,0.15) 92%,
+    transparent 100%
+  );
+}
+
+/* ── STOP ────────────────────────────────────── */
+.stop {
+  position: relative;
+  padding-left: 32px;
+  margin-bottom: 0;
+  transition: opacity 0.2s;
+}
+
+/* dot */
+.stop::before {
+  content: '';
+  position: absolute;
+  left: 1px;
+  top: 7px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #1c1914;
+  transform: translateX(-50%);
+}
+
+/* ── ALL STOPS — shared row layout ──────────── */
+.stop { padding-bottom: 28px; }
+
+.stop::before {
+  width: 5px; height: 5px; top: 8px;
+  background: rgba(28,25,20,0.2);
+}
+
+.s-row {
+  display: flex; align-items: baseline; gap: 14px;
+}
+.s-ticker {
+  font-family: Georgia, serif;
+  font-size: 18px; font-weight: 700;
+  letter-spacing: -0.3px;
+  min-width: 3ch;
+}
+.s-date {
+  font-size: 13px; color: #9a9080;
+}
+.s-sub {
+  font-size: 12px; color: #9a9080;
+  margin-top: 4px; padding-left: 0;
+}
+
+/* ── PAST ──────────────────────────────────── */
+.stop.past { opacity: 0.35; }
+.stop.past + .stop.past { opacity: 0.18; }
+
+/* ── CURRENT ──────────────────────────────── */
+.stop.now::before {
+  width: 8px; height: 8px; top: 6px;
+  background: #1c1914;
+  box-shadow: 0 0 0 2px #edeae3, 0 0 0 3.5px #1c1914;
+}
+.braille-ptr {
+  font-family: monospace;
+  font-size: 12px;
+  color: #9a9080;
+  margin-left: 6px;
+  user-select: none;
+  vertical-align: baseline;
+}
+.stop.now .s-ticker { font-size: 18px; }
+.stop.now .s-date   { color: #3d3830; font-weight: 500; }
+.s-countdown {
+  font-family: 'SF Mono', 'Fira Mono', 'Courier New', monospace;
+  font-size: 12px; color: #9a9080; margin-top: 4px;
+  letter-spacing: 0.03em;
+}
+
+/* ── FUTURE ──────────────────────────────── */
+.stop.future { opacity: 0.45; }
+.stop.future + .stop.future { opacity: 0.22; }
+.stop.future + .stop.future + .stop.future { opacity: 0.1; }
+
+/* ── FADE FOOTER ─────────────────────────────── */
+.fade-out {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+  height: 120px;
+  background: linear-gradient(to bottom, transparent, #edeae3 85%);
+  pointer-events: none;
+}
+.bottom-label {
+  position: fixed; bottom: 18px; left: 0; right: 0; z-index: 11;
+  text-align: center;
+  font-size: 11px; color: rgba(154,144,128,0.6);
+  letter-spacing: 0.04em;
+}
+</style>
+</head>
+<body>
+
+<div class="blobs" aria-hidden="true">
+  <div class="b b1"></div>
+  <div class="b b2"></div>
+  <div class="b b3"></div>
+</div>
+
+<header>
+  <div class="logo">steadyflow</div>
+  <div id="navDate"></div>
+</header>
+
+<div class="track" id="track"></div>
+
+<div class="fade-out"></div>
+<div class="bottom-label">· · ·</div>
+
+<script>
+const ANCHOR  = new Date('2026-03-17T00:00:00');
+const CYCLE   = ['BIP','VZ','KMI','DUK'];
+const THAI_M  = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const DAYS_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+
+const STOCKS = {
+  BIP: { name:'Brookfield Infrastructure Partners', desc:'infrastructure โครงสร้างพื้นฐาน 30 ประเทศ', color:'#b06a42' },
+  VZ:  { name:'Verizon Communications',             desc:'telecom 5G ทุกคนต้องใช้ทุกวัน',           color:'#6a6aaa' },
+  KMI: { name:'Kinder Morgan',                      desc:'ท่อก๊าซสหรัฐ รับ AI datacenter demand',   color:'#3f7f7a' },
+  DUK: { name:'Duke Energy',                        desc:'ไฟฟ้า regulated monopoly 100 ปีไม่ขาด',   color:'#6a8a4a' },
+};
+
+function monday(d) {
+  const r = new Date(d); r.setHours(0,0,0,0);
+  const day = r.getDay();
+  r.setDate(r.getDate() + (day===0 ? -6 : 1-day));
+  return r;
+}
+function wkNum(d)  { return Math.floor((monday(d)-ANCHOR)/6048e5)+1; }
+function wkDate(n) { const d=new Date(ANCHOR); d.setDate(d.getDate()+(n-1)*7); return d; }
+function ticker(n) { return CYCLE[((n-1)%4+4)%4]; }
+function fmt(d)    { return `${d.getDate()} ${THAI_M[d.getMonth()]} ${String(d.getFullYear()+543).slice(-2)}`; }
+function fmtFull(d){ return `${d.getDate()} ${THAI_M[d.getMonth()]} ${d.getFullYear()+543}`; }
+
+function render() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const mon   = monday(today);
+  const curWn = Math.max(1, wkNum(today));
+  const cycN  = Math.ceil(curWn/4);
+  const posN  = ((curWn-1)%4)+1;
+
+  // nav date
+  document.getElementById('navDate').textContent =
+    `${DAYS_TH[today.getDay()]} ${fmtFull(today)}`;
+
+  const track = document.getElementById('track');
+  track.innerHTML = '';
+
+  const startWn = curWn - 2;
+  const endWn   = curWn + 2;
+
+  for (let wn=startWn; wn<=endWn; wn++) {
+    const d     = wkDate(wn);
+    const tk    = ticker(wn);
+    const s     = STOCKS[tk];
+    const isNow = wn===curWn;
+    const isPast= d<mon;
+
+    const stop = document.createElement('div');
+
+    const cls = isNow ? 'now' : isPast ? 'past' : 'future';
+    stop.className = `stop ${cls}`;
+
+    const row = `
+      <div class="s-row">
+        <span class="s-ticker" style="color:${s.color}">${tk}</span>
+        <span class="s-date">${fmt(d)}</span>
+      </div>`;
+
+    if (isNow) {
+      const cn = Math.ceil(wn/4);
+      stop.innerHTML = `
+        <div class="s-row">
+          <span class="s-ticker" style="color:${s.color}">${tk}</span>
+          <span class="s-date">${fmt(d)}</span>
+        </div>
+        <div class="s-sub">รอบ ${cn} · ${s.name}</div>
+        <div class="s-countdown"><span class="braille-ptr" id="braille-ptr">⠁</span> <span id="countdown">—</span></div>`;
+    } else {
+      stop.innerHTML = row;
+    }
+
+    track.appendChild(stop);
+  }
+
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  render();
+  initBraillePtr();
+  initCountdown();
+});
+
+// ── BRAILLE POINTER SPINNER ────────────────────
+function initBraillePtr() {
+  // clock: single dot rotates clockwise around perimeter — reads like a ticking second hand
+  const frames = ['⠁','⠈','⠐','⠠','⢀','⡀','⠄','⠂'];
+  let i = 0;
+  setInterval(() => {
+    const el = document.getElementById('braille-ptr');
+    if (el) el.textContent = frames[i % frames.length];
+    i++;
+  }, 100);
+}
+
+// ── COUNTDOWN ─────────────────────────────────
+function initCountdown() {
+  function nextMonday() {
+    const d = new Date();
+    const day = d.getDay();
+    const add = day === 1 ? 7 : day === 0 ? 1 : 8 - day;
+    d.setDate(d.getDate() + add);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function tick() {
+    const el = document.getElementById('countdown');
+    if (!el) return;
+    const diff = nextMonday() - Date.now();
+    if (diff <= 0) { el.textContent = 'วันนี้วันจันทร์'; return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000)  / 60000);
+    const s = Math.floor((diff % 60000)    / 1000);
+    const pad = n => String(n).padStart(2, '0');
+    el.textContent = d > 0
+      ? `${d} วัน ${pad(h)}:${pad(m)}:${pad(s)}`
+      : `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+
+  tick();
+  setInterval(tick, 1000);
+}
+</script>
+</body>
+</html>
