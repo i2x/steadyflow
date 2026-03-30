@@ -1,307 +1,538 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>steadyflow</title>
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI',
-               'Noto Sans Thai', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  background: #c8c1b6;
-  color: #1c1914;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
-/* ── BLOBS ───────────────────────────────────── */
-.blobs { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-.b {
-  position: absolute; border-radius: 50%;
-  filter: blur(88px);
-}
-.b1 { width: 600px; height: 560px; top: -140px; right: -100px;
-      background: radial-gradient(circle, #c8724a 10%, transparent 62%); opacity: 0.72; }
-.b2 { width: 500px; height: 560px; top: 18%; left: -130px;
-      background: radial-gradient(circle, #5694b8 10%, transparent 62%); opacity: 0.6; }
-.b3 { width: 420px; height: 400px; bottom: -100px; right: -20px;
-      background: radial-gradient(circle, #469e88 10%, transparent 62%); opacity: 0.55; }
-
-/* ── HEADER ──────────────────────────────────── */
-header {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
-  padding: 18px 28px;
-  display: flex; justify-content: space-between; align-items: center;
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
-  pointer-events: none;
-}
-.logo { font-size: 13px; font-weight: 600; letter-spacing: -0.3px; color: rgba(28,25,20,0.85); }
-#navDate { font-size: 12px; color: rgba(28,25,20,0.58); }
-
-/* ── TRACK ───────────────────────────────────── */
-.track {
-  position: relative; z-index: 1;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 92px 20px 160px 48px;
-}
-
-/* spine */
-.track::before {
-  content: '';
-  position: absolute;
-  left: 24px;
-  top: 0; bottom: 0;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255,255,255,0.5) 8%,
-    rgba(255,255,255,0.5) 92%,
-    transparent 100%
-  );
-}
-
-/* ── STOP — glass card ───────────────────────── */
-.stop {
-  position: relative;
-  margin-bottom: 9px;
-  padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: none;
-  border-radius: 18px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.07);
-  transition: opacity 0.3s;
-}
-
-/* dot on spine */
-.stop::before {
-  content: '';
-  position: absolute;
-  left: -24px;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-}
-
-.s-row { display: flex; align-items: baseline; gap: 14px; }
-.s-ticker {
-  font-family: Georgia, serif;
-  font-size: 18px; font-weight: 700;
-  letter-spacing: -0.3px;
-  min-width: 3ch;
-}
-.s-date { font-size: 13px; color: rgba(28,25,20,0.65); }
-.s-sub  { font-size: 12px; color: rgba(28,25,20,0.58); margin-top: 5px; }
-
-/* ── PAST ──────────────────────────────────── */
-.stop.past { opacity: 0.55; filter: blur(1.2px); }
-.stop.past + .stop.past { opacity: 0.32; filter: blur(2px); }
-
-/* ── CURRENT ──────────────────────────────── */
-.stop.now {
-  background: rgba(255, 255, 255, 0.38);
-  border: none;
-  box-shadow: 0 4px 28px rgba(0,0,0,0.12);
-  filter: none;
-}
-.stop.now .s-ticker { font-size: 22px; }
-.stop.now .s-date   { font-size: 15px; font-weight: 600; color: rgba(28,25,20,0.85); }
-.stop.now .s-sub    { font-size: 13px; color: rgba(28,25,20,0.7); }
-.stop.now::before {
-  width: 9px; height: 9px;
-  background: rgba(28,25,20,0.72);
-  border-color: rgba(255,255,255,0.7);
-  box-shadow: 0 0 0 2.5px rgba(255,255,255,0.22);
-}
-.stop.now .s-date { color: rgba(28,25,20,0.75); font-weight: 500; }
-.braille-ptr {
-  font-family: monospace;
-  font-size: 12px;
-  color: rgba(28,25,20,0.5);
-  margin-left: 4px;
-  user-select: none;
-}
-.s-countdown {
-  font-family: 'SF Mono', 'Fira Mono', 'Courier New', monospace;
-  font-size: 12px; color: rgba(28,25,20,0.55);
-  margin-top: 5px; letter-spacing: 0.03em;
-}
-
-/* ── FUTURE ──────────────────────────────── */
-.stop.future { opacity: 0.6; filter: blur(1.2px); }
-.stop.future + .stop.future { opacity: 0.38; filter: blur(2px); }
-.stop.future + .stop.future + .stop.future { opacity: 0.22; filter: blur(3px); }
-
-/* ── FADE FOOTER ─────────────────────────────── */
-.fade-out {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
-  height: 120px;
-  background: linear-gradient(to bottom, transparent, rgba(200,193,182,0.96) 88%);
-  pointer-events: none;
-}
-.bottom-label {
-  position: fixed; bottom: 18px; left: 0; right: 0; z-index: 11;
-  text-align: center;
-  font-size: 11px; color: rgba(28,25,20,0.2);
-  letter-spacing: 0.06em;
-}
-</style>
-</head>
-<body>
-
-<div class="blobs" aria-hidden="true">
-  <div class="b b1"></div>
-  <div class="b b2"></div>
-  <div class="b b3"></div>
-</div>
-
-<header>
-  <div class="logo">steadyflow</div>
-  <div id="navDate"></div>
-</header>
-
-<div class="track" id="track"></div>
-
-<div class="fade-out"></div>
-<div class="bottom-label">· · ·</div>
-
-<script>
-const ANCHOR  = new Date('2026-03-16T00:00:00');
-const CYCLE   = ['BIP','ENB','KMI','DUK'];
-const THAI_M  = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-const DAYS_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
-
-const STOCKS = {
-  BIP: { name:'Brookfield Infrastructure Partners', desc:'infrastructure โครงสร้างพื้นฐาน 30 ประเทศ', color:'#b06a42' },
-  ENB: { name:'Enbridge',                            desc:'ท่อน้ำมัน/ก๊าซใหญ่สุดในอเมริกาเหนือ',      color:'#6a6aaa' },
-  KMI: { name:'Kinder Morgan',                      desc:'ท่อก๊าซสหรัฐ รับ AI datacenter demand',   color:'#3f7f7a' },
-  DUK: { name:'Duke Energy',                        desc:'ไฟฟ้า regulated monopoly 100 ปีไม่ขาด',   color:'#6a8a4a' },
-};
-
-function monday(d) {
-  const r = new Date(d); r.setHours(0,0,0,0);
-  const day = r.getDay();
-  r.setDate(r.getDate() + (day===0 ? -6 : 1-day));
-  return r;
-}
-function wkNum(d)  { return Math.floor((monday(d)-ANCHOR)/6048e5)+1; }
-function wkDate(n) { const d=new Date(ANCHOR); d.setDate(d.getDate()+(n-1)*7); return d; }
-function ticker(n) { return CYCLE[((n-1)%4+4)%4]; }
-function fmt(d)    { return `${d.getDate()} ${THAI_M[d.getMonth()]} ${String(d.getFullYear()+543).slice(-2)}`; }
-function fmtFull(d){ return `${d.getDate()} ${THAI_M[d.getMonth()]} ${d.getFullYear()+543}`; }
-
-function render() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  const mon   = monday(today);
-  const curWn = Math.max(1, wkNum(today));
-  const cycN  = Math.ceil(curWn/4);
-  const posN  = ((curWn-1)%4)+1;
-
-  // nav date
-  document.getElementById('navDate').textContent =
-    `${DAYS_TH[today.getDay()]} ${fmtFull(today)}`;
-
-  const track = document.getElementById('track');
-  track.innerHTML = '';
-
-  const startWn = curWn - 2;
-  const endWn   = curWn + 2;
-
-  for (let wn=startWn; wn<=endWn; wn++) {
-    const d     = wkDate(wn);
-    const tk    = ticker(wn);
-    const s     = STOCKS[tk];
-    const isNow  = wn === curWn;
-    const isPast = wn < curWn;
-
-    const stop = document.createElement('div');
-
-    const cls = isNow ? 'now' : isPast ? 'past' : 'future';
-    stop.className = `stop ${cls}`;
-
-    const row = `
-      <div class="s-row">
-        <span class="s-ticker" style="color:${s.color}">${tk}</span>
-        <span class="s-date">${fmt(d)}</span>
-      </div>`;
-
-    if (isNow) {
-      const cn = Math.ceil(wn/4);
-      stop.innerHTML = `
-        <div class="s-row">
-          <span class="s-ticker" style="color:${s.color}">${tk}</span>
-          <span class="s-date">${fmt(d)}</span>
-        </div>
-        <div class="s-sub">รอบ ${cn} · ${s.name}</div>
-        <div class="s-countdown"><span class="braille-ptr" id="braille-ptr">⠁</span> <span id="countdown">—</span></div>`;
-    } else {
-      stop.innerHTML = row;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DCA Rotation</title>
+  <style>
+    :root {
+      --bg: #07111b;
+      --bg2: #0b1624;
+      --card: rgba(255,255,255,0.06);
+      --line: rgba(255,255,255,0.10);
+      --text: #edf4fb;
+      --muted: rgba(237,244,251,0.64);
+      --soft: rgba(237,244,251,0.44);
+      --accent: #9bd6ff;
+      --accent2: #a8f0d4;
+      --shadow: 0 18px 60px rgba(0,0,0,.26);
     }
 
-    track.appendChild(stop);
-  }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(101, 192, 255, 0.14), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(151, 239, 207, 0.10), transparent 28%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+      background-attachment: fixed;
+    }
 
-}
+    .wrap {
+      width: min(100%, 560px);
+      margin: 0 auto;
+      padding: 24px 14px 40px;
+    }
 
-document.addEventListener('DOMContentLoaded', () => {
-  render();
-  initBraillePtr();
-  initCountdown();
-});
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
 
-// ── BRAILLE POINTER SPINNER ────────────────────
-function initBraillePtr() {
-  // clock: single dot rotates clockwise around perimeter — reads like a ticking second hand
-  const frames = ['⠁','⠈','⠐','⠠','⢀','⡀','⠄','⠂'];
-  let i = 0;
-  setInterval(() => {
-    const el = document.getElementById('braille-ptr');
-    if (el) el.textContent = frames[i % frames.length];
-    i++;
-  }, 100);
-}
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(8, 15, 25, 0.58);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
 
-// ── COUNTDOWN ─────────────────────────────────
-function initCountdown() {
-  function nextMonday() {
-    const d = new Date();
-    const day = d.getDay();
-    const add = day === 1 ? 7 : day === 0 ? 1 : 8 - day;
-    d.setDate(d.getDate() + add);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
+    .header {
+      padding: 16px 18px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
 
-  function tick() {
-    const el = document.getElementById('countdown');
-    if (!el) return;
-    const diff = nextMonday() - Date.now();
-    if (diff <= 0) { el.textContent = 'วันนี้วันจันทร์'; return; }
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000)  / 60000);
-    const s = Math.floor((diff % 60000)    / 1000);
-    const pad = n => String(n).padStart(2, '0');
-    el.textContent = d > 0
-      ? `${d} วัน ${pad(h)}:${pad(m)}:${pad(s)}`
-      : `${pad(h)}:${pad(m)}:${pad(s)}`;
-  }
+    .date {
+      font-size: .86rem;
+      color: var(--muted);
+    }
 
-  tick();
-  setInterval(tick, 1000);
-}
-</script>
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .76rem;
+      color: var(--soft);
+      white-space: nowrap;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .hero {
+      padding: 14px 18px 18px;
+    }
+
+    .eyebrow {
+      font-size: .72rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--soft);
+      margin-bottom: 10px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .ticker {
+      font-size: 3.2rem;
+      line-height: .9;
+      font-weight: 800;
+      letter-spacing: -.06em;
+    }
+
+    .desc {
+      font-size: .97rem;
+      line-height: 1.45;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .meta-item {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+    }
+
+    .meta-label {
+      font-size: .7rem;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 5px;
+    }
+
+    .meta-value {
+      font-size: .88rem;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .countdown-card {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .countdown-label {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .countdown-value {
+      font-size: 1.08rem;
+      font-weight: 700;
+    }
+
+    .next-stock {
+      text-align: right;
+    }
+
+    .next-stock .label {
+      font-size: .72rem;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 5px;
+    }
+
+    .next-stock .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent2);
+    }
+
+    .timeline {
+      padding: 6px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.025);
+    }
+
+    .row.now {
+      background: linear-gradient(135deg, rgba(145,215,255,0.14), rgba(255,255,255,0.035));
+      border-color: rgba(145,215,255,0.22);
+    }
+
+    .badge {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      text-align: center;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 6px 0;
+      color: var(--muted);
+    }
+
+    .row.now .badge { color: var(--accent); }
+
+    .row-main {
+      min-width: 0;
+    }
+
+    .stock-line {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 3px;
+    }
+
+    .stock {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .week-range {
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    .money {
+      text-align: right;
+    }
+
+    .money-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .money-sub {
+      margin-top: 3px;
+      font-size: .72rem;
+      color: var(--soft);
+    }
+
+    .footer {
+      padding: 10px 18px 16px;
+      font-size: .76rem;
+      color: var(--soft);
+      text-align: center;
+    }
+
+    @media (max-width: 560px) {
+      .meta { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .money { text-align: left; }
+      .hero-top, .countdown-card { flex-direction: column; align-items: flex-start; }    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="stack">
+      <section class="card">
+        <div class="header">
+          <div class="date" id="todayLabel">-</div>
+          <div class="pill" id="ratioLabel">-</div>
+        </div>
+        <div class="hero">
+          <div class="eyebrow">สัปดาห์นี้</div>
+          <div class="hero-top">
+            <div>
+              <div class="ticker" id="currentTicker">-</div>
+            </div>
+          </div>
+          <div class="desc" id="companyDesc">-</div>
+          <div class="meta">
+            <div class="meta-item">
+              <div class="meta-label">ปันผล</div>
+              <div class="meta-value" id="dividendStyle">-</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">บทบาท</div>
+              <div class="meta-value" id="businessType">-</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">ลงสัปดาห์นี้</div>
+              <div class="meta-value" id="currentAmount">-</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card countdown-card">
+        <div>
+          <div class="countdown-label">เหลือเวลาไปรอบถัดไป</div>
+          <div class="countdown-value" id="countdown">-</div>
+        </div>
+        <div class="next-stock">
+          <div class="label">ตัวถัดไป</div>
+          <div class="value" id="nextTicker">-</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="timeline" id="scheduleBody"></div>
+        <div class="footer">รอบ 4 สัปดาห์ · เดือนละ 10,000 บาท</div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const MONTHLY_BUDGET = 10000;
+    const START_DATE = new Date('2026-03-30T00:00:00');
+    const ROTATION = ['O', 'ENB', 'BIP', 'ENB'];
+
+    const STOCK_INFO = {
+      O: {
+        desc: 'REIT แบบ net lease ที่ปล่อยเช่าอสังหาฯ เชิงพาณิชย์ระยะยาวและจ่ายปันผลรายเดือน',
+        dividend: 'รายเดือน',
+        business: 'Commercial REIT'
+      },
+      ENB: {
+        desc: 'โครงสร้างพื้นฐานพลังงาน เน้นท่อส่งน้ำมัน ก๊าซ และธุรกิจก๊าซยูทิลิตีในอเมริกาเหนือ',
+        dividend: 'รายไตรมาส',
+        business: 'Energy Infrastructure'
+      },
+      BIP: {
+        desc: 'เจ้าของโครงสร้างพื้นฐานหลายประเภท เช่น utilities, transport, midstream และ data',
+        dividend: 'รายไตรมาส',
+        business: 'Global Infrastructure'
+      }
+    };
+
+    const TARGETS = { ENB: 0.40, O: 0.35, BIP: 0.25 };
+
+    const todayLabel = document.getElementById('todayLabel');
+    const ratioLabel = document.getElementById('ratioLabel');
+    const currentTicker = document.getElementById('currentTicker');
+    const companyDesc = document.getElementById('companyDesc');
+    const dividendStyle = document.getElementById('dividendStyle');
+    const businessType = document.getElementById('businessType');
+    const currentAmount = document.getElementById('currentAmount');
+    const nextTicker = document.getElementById('nextTicker');
+    const countdown = document.getElementById('countdown');
+    const scheduleBody = document.getElementById('scheduleBody');
+
+    function startOfDay(d) {
+      const x = new Date(d);
+      x.setHours(0, 0, 0, 0);
+      return x;
+    }
+
+    function weekDiff(a, b) {
+      return Math.floor((startOfDay(a) - startOfDay(b)) / (7 * 24 * 60 * 60 * 1000));
+    }
+
+    function addWeeks(date, weeks) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + weeks * 7);
+      return d;
+    }
+
+    function formatMoney(n) {
+      return new Intl.NumberFormat('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n) + ' บาท';
+    }
+
+    function formatDate(d) {
+      return new Intl.DateTimeFormat('th-TH', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+      }).format(d);
+    }
+
+    function formatRange(start) {
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      const a = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short' }).format(start);
+      const b = new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'short' }).format(end);
+      return `${a} – ${b}`;
+    }
+
+    function rotationTicker(weekIndex) {
+      const idx = ((weekIndex % ROTATION.length) + ROTATION.length) % ROTATION.length;
+      return ROTATION[idx];
+    }
+
+    function labelFor(offset) {
+      if (offset === 0) return 'now';
+      if (offset === 1) return 'next';
+      if (offset === -1) return '-1w';
+      if (offset === -2) return '-2w';
+      if (offset === 2) return '+2w';
+      return `${offset > 0 ? '+' : ''}${offset}w`;
+    }
+
+    function nextBoundary(now) {
+      if (now < START_DATE) return START_DATE;
+      const currentWeekIndex = weekDiff(now, START_DATE);
+      const currentWeekStart = addWeeks(START_DATE, currentWeekIndex);
+      return addWeeks(currentWeekStart, 1);
+    }
+
+    function monthKey(date) {
+      const y = date.getFullYear();
+      const m = date.getMonth() + 1;
+      return `${y}-${String(m).padStart(2, '0')}`;
+    }
+
+    function getMonthWeeks(anyDateInMonth) {
+      const year = anyDateInMonth.getFullYear();
+      const month = anyDateInMonth.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+
+      const weeks = [];
+      let index = weekDiff(firstDay, START_DATE) - 1;
+      while (addWeeks(START_DATE, index) < firstDay) index += 1;
+
+      while (true) {
+        const weekStart = addWeeks(START_DATE, index);
+        if (weekStart > lastDay) break;
+        weeks.push({ index, weekStart, ticker: rotationTicker(index) });
+        index += 1;
+      }
+      return weeks;
+    }
+
+    function round2(n) {
+      return Math.round(n * 100) / 100;
+    }
+
+    function allocateMonth(anyDateInMonth) {
+      const weeks = getMonthWeeks(anyDateInMonth);
+      const month = monthKey(anyDateInMonth);
+      const grouped = { ENB: [], O: [], BIP: [] };
+      weeks.forEach(w => grouped[w.ticker].push(w.index));
+
+      const amountMap = {};
+      for (const ticker of Object.keys(grouped)) {
+        const indices = grouped[ticker];
+        if (!indices.length) continue;
+        const targetTotal = round2(MONTHLY_BUDGET * TARGETS[ticker]);
+        const base = round2(targetTotal / indices.length);
+        let assigned = 0;
+        indices.forEach((idx, i) => {
+          const value = i === indices.length - 1 ? round2(targetTotal - assigned) : base;
+          amountMap[idx] = value;
+          assigned = round2(assigned + value);
+        });
+      }
+
+      const total = round2(Object.values(amountMap).reduce((a, b) => a + b, 0));
+      const drift = round2(MONTHLY_BUDGET - total);
+      if (Math.abs(drift) > 0 && weeks.length) {
+        const lastIdx = weeks[weeks.length - 1].index;
+        amountMap[lastIdx] = round2((amountMap[lastIdx] || 0) + drift);
+      }
+
+      return { month, weeks, amountMap };
+    }
+
+    function scheduleItemByDate(date) {
+      const weekIndex = date < START_DATE ? 0 : weekDiff(date, START_DATE);
+      const alloc = allocateMonth(addWeeks(START_DATE, weekIndex));
+      return {
+        weekIndex,
+        ticker: rotationTicker(weekIndex),
+        amount: alloc.amountMap[weekIndex] || 0,
+        month: alloc.month
+      };
+    }
+
+    function render() {
+      const now = new Date();
+      const currentWeekIndex = now < START_DATE ? 0 : weekDiff(now, START_DATE);
+      const currentWeekStart = addWeeks(START_DATE, currentWeekIndex);
+      const current = scheduleItemByDate(currentWeekStart);
+      const next = scheduleItemByDate(addWeeks(START_DATE, currentWeekIndex + 1));
+      const info = STOCK_INFO[current.ticker];
+      const monthAlloc = allocateMonth(currentWeekStart);
+      const monthSpent = round2(monthAlloc.weeks.reduce((sum, w) => sum + monthAlloc.amountMap[w.index], 0));
+
+      todayLabel.textContent = new Intl.DateTimeFormat('th-TH', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      }).format(now);
+      ratioLabel.textContent = 'ENB 40% · O 35% · BIP 25%';
+
+      currentTicker.textContent = current.ticker;
+      companyDesc.textContent = info.desc;
+      dividendStyle.textContent = info.dividend;
+      businessType.textContent = info.business;
+      currentAmount.textContent = formatMoney(current.amount);
+      nextTicker.textContent = next.ticker;
+
+      scheduleBody.innerHTML = '';
+      monthAlloc.weeks.forEach((w) => {
+        const start = w.weekStart;
+        const offset = w.index - currentWeekIndex;
+        const row = document.createElement('div');
+        row.className = 'row' + (offset === 0 ? ' now' : '');
+        row.innerHTML = `
+          <div class="badge">${offset === 0 ? 'now' : 'w' + (monthAlloc.weeks.indexOf(w) + 1)}</div>
+          <div class="row-main">
+            <div class="stock-line">
+              <div class="stock">${w.ticker}</div>
+              <div class="week-range">${formatDate(start)}</div>
+            </div>
+            <div class="week-range">${formatRange(start)}</div>
+          </div>
+          <div class="money">
+            <div class="money-value">${formatMoney(monthAlloc.amountMap[w.index] || 0)}</div>
+            <div class="money-sub">${monthAlloc.month}</div>
+          </div>
+        `;
+        scheduleBody.appendChild(row);
+      });
+
+      document.querySelector('.footer').textContent = `เดือนนี้รวม ${formatMoney(monthSpent)} · ${monthAlloc.weeks.length} สัปดาห์ · ไม่เกิน 10,000 บาท`;
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      const target = nextBoundary(now);
+      let diff = target - now;
+      if (diff < 0) diff = 0;
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      countdown.textContent = `${days} วัน ${hours} ชม. ${minutes} นาที`;
+    }
+
+    render();
+    updateCountdown();
+    setInterval(updateCountdown, 30000);
+  </script>
 </body>
 </html>
