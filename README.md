@@ -22,13 +22,16 @@ https://<username>.github.io/<repo-name>
 
 ## พอร์ตที่ใช้
 
-| Ticker | Sector | สัดส่วน |
-|--------|--------|---------|
-| ENB | Pipeline & Utility | 25% |
-| BIP | Global Infrastructure | 20% |
-| O | REIT (จ่ายรายเดือน) | 25% |
-| DUK | Electric Utility | 15% |
-| EPD | Midstream MLP | 15% |
+สัดส่วนออกแบบสำหรับ DCA ระยะ 20 ปี โดยให้น้ำหนักกับ energy infrastructure ที่โลก AI ต้องการโดยตรง
+
+| Ticker | Sector | สัดส่วน | เหตุผลระยะยาว |
+|--------|--------|---------|---------------|
+| ENB | Pipeline & Gas Utility | 35% | natural gas คือ fuel หลักของ data center ปัจจุบัน, 98% รายได้จากสัญญาระยะยาว |
+| BIP | Global Infrastructure | 25% | ครอบ data infra, port, rail, energy — โตตาม AI economy |
+| DUK | Electric Utility | 25% | ไฟฟ้าที่ data center ต้องเชื่อมกริด, จ่ายปันผล 99+ ปีไม่ขาด |
+| O | REIT (จ่ายรายเดือน) | 15% | monthly dividend ช่วย compound ในช่วง DCA, lease เฉลี่ย 8.8 ปีปกป้องระยะสั้น |
+
+> **EPD** ถูกนำออก: เป็น MLP/PTP ทำให้ broker บล็อกการซื้อสำหรับนักลงทุนต่างชาติ (IRS Sec. 1446f มีผลตั้งแต่ ม.ค. 2023)
 
 ---
 
@@ -54,7 +57,6 @@ https://<username>.github.io/<repo-name>
 | BIP | ก.พ / พ.ค / ส.ค / พ.ย | |
 | O | ทุกเดือน | Monthly dividend |
 | DUK | ก.พ / พ.ค / ส.ค / พ.ย | |
-| EPD | ม.ค / เม.ย / ก.ค / ต.ค | |
 
 > วันที่แน่นอนในแต่ละไตรมาสอาจเลื่อนได้ 1–3 วัน บริษัทประกาศล่วงหน้าทีละไตรมาส
 
@@ -89,8 +91,10 @@ your-repo/
 
 ```js
 const STOCKS = [
-  { ticker:'ENB', sector:'Pipeline', color:'var(--enb)', hex:'#5b8fd4', alloc:0.25 },
-  { ticker:'BIP', sector:'Infra',    color:'var(--bip)', hex:'#4bba8a', alloc:0.20 },
+  { ticker:'ENB', sector:'Pipeline', color:'var(--enb)', hex:'#5b8fd4', alloc:0.35 },
+  { ticker:'BIP', sector:'Infra',    color:'var(--bip)', hex:'#4bba8a', alloc:0.25 },
+  { ticker:'O',   sector:'REIT',     color:'var(--o)',   hex:'#e08a45', alloc:0.15 },
+  { ticker:'DUK', sector:'Utility',  color:'var(--duk)', hex:'#a070c8', alloc:0.25 },
   // เพิ่ม/ลด/แก้ตรงนี้
 ];
 ```
@@ -107,7 +111,6 @@ const STOCKS = [
   --bip: #4bba8a;
   --o:   #e08a45;
   --duk: #a070c8;
-  --epd: #d45858;
 }
 ```
 
@@ -118,8 +121,9 @@ const STOCKS = [
 ```js
 const DIV_SCHEDULE = {
   ENB: [1, 4, 7, 10],   // index เดือน 0=ม.ค, 1=ก.พ, ...
+  BIP: [1, 4, 7, 10],
   O:   [0,1,2,3,4,5,6,7,8,9,10,11],
-  // ...
+  DUK: [1, 4, 7, 10],
 };
 const DIV_DATA_DATE = 'มี.ค 2026'; // อัปเดตวันที่ที่ตรวจสอบข้อมูล
 ```
