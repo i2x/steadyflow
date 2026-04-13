@@ -132,7 +132,7 @@ const DIV_DATA_DATE = 'มี.ค 2026'; // อัปเดตวันที่
 
 ## Technical Notes
 
-- **DST-safe date arithmetic** — `getInvestmentMondays()` ใช้ noon (12:00) เป็น anchor เพื่อป้องกัน edge case จาก Daylight Saving Time ที่อาจทำให้วันเปลี่ยนในบางปีหรือบาง timezone
+- **DST-safe date arithmetic** — `getMondays()` ใช้ noon (12:00) เป็น anchor เพื่อป้องกัน edge case จาก Daylight Saving Time ที่อาจทำให้วันเปลี่ยนในบางปีหรือบาง timezone
 - **Year range** — รองรับถึงปีปัจจุบัน +200 ปี คำนวณ dynamic ตอน load ไม่ hardcode
 - **Date-only comparison** — `isCurrentWeek()` strip เวลาออกก่อนเปรียบเทียบ ป้องกัน false negative จาก timestamp
 
