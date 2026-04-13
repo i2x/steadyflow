@@ -654,18 +654,20 @@ updateClock();
 const fmt   = n => Math.round(n).toLocaleString('th-TH');
 const fmtK  = n => n >= 1000 ? (n/1000).toFixed(1)+'K' : String(Math.round(n));
 
-function getSundays(year, month) {
+function getInvestmentMondays(year, month) {
   // ใช้ noon (12:00) เพื่อหลีกเลี่ยง DST edge case ที่อาจทำให้วันเปลี่ยน
-  const days = [];
+  const mondays = [];
   const d = new Date(year, month, 1, 12, 0, 0);
-  // หาวันอาทิตย์แรกของเดือน
-  const dow = d.getDay(); // 0=อาทิตย์
-  if (dow !== 0) d.setDate(d.getDate() + (7 - dow));
+  const day = d.getDay(); // Sunday=0, Monday=1
+  const daysUntilMonday = day === 0 ? 1 : (8 - day) % 7;
+  d.setDate(d.getDate() + daysUntilMonday);
+
   while (d.getMonth() === month) {
-    days.push(new Date(d));
+    mondays.push(new Date(d));
     d.setDate(d.getDate() + 7);
   }
-  return days;
+
+  return mondays;
 }
 
 function weekBudgets(total, n) {
@@ -673,6 +675,7 @@ function weekBudgets(total, n) {
     3: [0.38, 0.34, 0.28],
     4: [0.30, 0.26, 0.24, 0.20],
     5: [0.26, 0.22, 0.22, 0.18, 0.12],
+    6: [0.22, 0.20, 0.18, 0.16, 0.14, 0.10],
   }[n] || Array(n).fill(1/n);
   const amts = weights.slice(0,-1).map(w => Math.round(total*w/100)*100);
   amts.push(total - amts.reduce((a,b)=>a+b,0));
@@ -691,11 +694,11 @@ function stockAmts(weekTotal) {
   return amts;
 }
 
-function isCurrentWeek(sun) {
+function isCurrentWeek(weekStart) {
   const now   = new Date();
   // เปรียบเทียบเฉพาะวันที่ ไม่ใช้เวลา
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const start = new Date(sun.getFullYear(), sun.getMonth(), sun.getDate());
+  const start = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate());
   const end   = new Date(start); end.setDate(end.getDate() + 6);
   return today >= start && today <= end;
 }
@@ -743,8 +746,8 @@ function render() {
   const year    = Math.min(Math.max(rawYear, minYear), maxYear);
   // ซิงค์ค่ากลับไปที่ input ถ้าถูก clamp
   if (rawYear !== year) document.getElementById('sel-year').value = year;
-  const sundays = getSundays(year, month);
-  const nW      = sundays.length;
+  const investDates = getInvestmentMondays(year, month);
+  const nW      = investDates.length;
   const wBgets  = weekBudgets(budget, nW);
 
   // ── Metrics (เฉพาะสิ่งที่คำนวณได้แน่นอนจากข้อมูลที่ใส่) ──
@@ -753,7 +756,7 @@ function render() {
     <div class="metric">
       <div class="metric-label">งบเดือนนี้</div>
       <div class="metric-value">${fmt(budget)}<span>฿</span></div>
-      <div class="metric-sub">${nW} สัปดาห์ในเดือนนี้</div>
+      <div class="metric-sub">ลงทุน ${nW} ครั้งในเดือนนี้</div>
     </div>
     <div class="metric">
       <div class="metric-label">เฉลี่ยต่อสัปดาห์</div>
@@ -781,19 +784,19 @@ function render() {
   html += `<div class="section-label">ตารางซื้อรายสัปดาห์</div>
   <div class="week-grid">`;
 
-  sundays.forEach((sun, wi) => {
+  investDates.forEach((weekStart, wi) => {
     const wb     = wBgets[wi];
     const amts   = stockAmts(wb);
-    const isCur  = isCurrentWeek(sun);
-    const dateLabel = sun.toLocaleDateString('th-TH', { day:'numeric', month:'short' });
-    const satDate = new Date(sun); satDate.setDate(satDate.getDate()+6);
-    const satLabel = satDate.toLocaleDateString('th-TH', { day:'numeric', month:'short' });
+    const isCur  = isCurrentWeek(weekStart);
+    const dateLabel = weekStart.toLocaleDateString('th-TH', { day:'numeric', month:'short' });
+    const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+    const endLabel = weekEnd.toLocaleDateString('th-TH', { day:'numeric', month:'short' });
 
     html += `<div class="week-card${isCur?' current-week':''}">
       <div class="week-head">
         <div>
           <div class="week-num">สัปดาห์ที่ ${wi+1}${isCur?' <span class="cw-label">← now</span>':''}</div>
-          <div class="week-date">${dateLabel} – ${satLabel}</div>
+          <div class="week-date">${dateLabel} – ${endLabel}</div>
         </div>
         <div>
           <div class="week-total-amt">${fmt(wb)}</div>
